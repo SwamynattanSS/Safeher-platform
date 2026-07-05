@@ -145,36 +145,3 @@ app.listen(PORT, () => console.log(`🚀 SafeHer Application Server is running o
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-const mongoose = require('mongoose');
-
-// 1. Connect to MongoDB Cloud using an environment variable
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log("Connected to MongoDB Cloud successfully!"))
-  .catch(err => console.error("MongoDB connection error:", err));
-
-// 2. Define the Blueprint (Schema) for your SOS data
-const SosAlertSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  location: { type: String, required: true }, // Can store coordinates or a map URL string
-  timestamp: { type: Date, default: Date.now }
-});
-
-// 3. Create the Database Model
-const SosAlert = mongoose.model('SosAlert', SosAlertSchema);
-
-// 4. Update your existing Express POST route where the SOS is triggered
-app.post('/api/sos', async (req, res) => {
-  const { name, location } = req.body;
-
-  try {
-    // Save to MongoDB Cloud
-    const newAlert = new SosAlert({ name, location });
-    await newAlert.save();
-
-    // --- Your existing Twilio SMS logic can stay right here ---
-
-    res.status(200).json({ success: true, message: "SOS logged in cloud and sent!" });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
