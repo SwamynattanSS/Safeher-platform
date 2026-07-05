@@ -1,5 +1,40 @@
 require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose'); // Add this
+const app = express();
+app.use(express.json());
+
+// 1. Connect to MongoDB (Make sure MONGODB_URI is in Render Environment Variables)
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.log("❌ MongoDB Error:", err));
+
+// 2. Define the Schema
+const alertSchema = new mongoose.Schema({
+  name: String,
+  location: String,
+  timestamp: { type: Date, default: Date.now }
+});
+const SosAlert = mongoose.model('SosAlert', alertSchema);
+
+// 3. Update your Route to save to DB
+app.post('/api/sos', async (req, res) => {
+  try {
+    const { name, location } = req.body;
+    
+    // Save to Database
+    const newAlert = new SosAlert({ name, location });
+    await newAlert.save();
+    
+    console.log("Data saved to MongoDB:", name);
+    res.status(200).send("Alert saved!");
+  } catch (err) {
+    res.status(500).send("Error saving data");
+  }
+});
+
+// ... rest of your existing code
+const express = require('express');
 const cors = require('cors');
 const twilio = require('twilio');
 const path = require('path');
