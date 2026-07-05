@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeHer - Public Standalone Platform</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f0f2f5; margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+        }
+        .phone-container {
+            background: white; width: 100%; max-width: 360px; padding-bottom: 20px;
+            border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .header { background: #4f46e5; color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 20px; }
+        .content { display: flex; flex-direction: column; align-items: center; padding: 30px; text-align: center; }
+        .sos-button {
+            background: #ef4444; color: white; border: none; border-radius: 50%;
+            width: 150px; height: 150px; font-size: 24px; font-weight: bold;
+            cursor: pointer; box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4); margin: 20px 0;
+        }
+        .selector { margin: 15px 0; width: 100%; }
+        select, input { padding: 10px; width: 90%; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; margin-bottom: 10px; }
+        
+        /* Dashboard Styling */
+        .dashboard {
+            width: 100%; max-width: 360px; margin-top: 20px; background: #1e293b; 
+            color: white; border-radius: 20px; padding: 15px; box-sizing: border-box;
+        }
+        .dashboard h3 { margin-top: 0; color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+        .alert-item { background: #334155; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+        .alert-item a { color: #38bdf8; }
+    </style>
+</head>
+<body>
+
+    <div class="phone-container">
+        <div class="header">SafeHer Guardian Interface</div>
+        <div class="content">
+            <input type="text" id="userName" value="Jane Doe" placeholder="Enter Your Name">
+            
+            <div class="selector">
+                <label style="font-size: 12px; font-weight: bold; color: #4b5563;">Execution Target Mode:</label>
+                <select id="appMode">
+                    <option value="Simulation">Simulation Mode (Always Works - No Errors)</option>
+                    <option value="RealSMS">Real SMS Mode (Uses Twilio Credits)</option>
+                </select>
+            </div>
+
+            <button class="sos-button" onclick="sendAlert()">SOS</button>
+            <div id="statusLabel" style="font-size: 14px; color: #4b5563; font-weight: 500;">Status: Ready</div>
+        </div>
+    </div>
+
+    <!-- Live Monitor Box for Remote Observers -->
+    <div class="dashboard">
+        <h3>📡 Global Live Activity Feed</h3>
+        <div id="feedBox">Loading active tracking array nodes...</div>
+    </div>
+
+    <script>
+        async function sendAlert() {
+            const label = document.getElementById('statusLabel');
+            label.innerText = "Locking hardware telemetry positions...";
+
+            if (!navigator.geolocation) {
+                label.innerText = "Location tracking unsupported on this client browser.";
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const payload = {
+                    userName: document.getElementById('userName').value || "Anonymous",
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    mode: document.getElementById('appMode').value,
+                    trustedContacts: ["+917708679151"] // Replace with your test target number
+                };
+
+                label.innerText = "Transmitting metrics to cloud network...";
+
+                const res = await fetch('/api/sos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                label.innerText = data.message;
+                updateDashboard();
+            });
+        }
+
+        async function updateDashboard() {
+            const res = await fetch('/api/dashboard');
+            const alerts = await res.json();
+            const feedBox = document.getElementById('feedBox');
+            if(alerts.length === 0) {
+                feedBox.innerHTML = "<span style='color: #94a3b8;'>No recent triggers active.</span>";
+                return;
+            }
+            feedBox.innerHTML = alerts.map(a => `
+                <div class="alert-item">
+                    <b>[${a.timestamp}] ${a.userName}</b> (${a.mode})<br>
+                    <a href="${a.mapLink}" target="_blank">🔗 View Live Map Vector Location</a>
+                </div>
+            `).join('');
+        }
+
+        // Keep updating the activity feed automatically every 3 seconds
+        setInterval(updateDashboard, 3000);
+        updateDashboard();
+    </script>
+</body>
+</html>
